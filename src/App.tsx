@@ -158,6 +158,111 @@ const QUIZ_QUESTIONS: QuizQuestion[] = [
     options: ["Missing 'already'", "Auxiliary should be 'has'", "The participle of 'go' is 'gone', not 'went'"],
     correct: 2,
     explanation: "'Went' is past simple. In Past Perfect we need the 3rd column: 'gone'."
+  },
+  {
+    id: 21,
+    sentence: "She _______ for three hours before she decided to take a break.",
+    options: ["has studied", "studied", "had studied"],
+    correct: 2,
+    explanation: "She studied before the decision to take a break."
+  },
+  {
+    id: 22,
+    sentence: "The cake was burnt because I _______ the oven on too high.",
+    options: ["had set", "set", "was setting"],
+    correct: 0,
+    explanation: "Setting the oven happened before the cake got burnt."
+  },
+  {
+    id: 23,
+    sentence: "By the time they arrived, we _______ everything.",
+    options: ["finished", "had finished", "have finished"],
+    correct: 1,
+    explanation: "We finished everything before their arrival."
+  },
+  {
+    id: 24,
+    sentence: "I didn't have any money because I _______ my wallet at home.",
+    options: ["left", "have left", "had left"],
+    correct: 2,
+    explanation: "Leaving the wallet happened before not having money."
+  },
+  {
+    id: 25,
+    sentence: "Had your brother _______ to you before he moved to London?",
+    options: ["speak", "spoke", "spoken"],
+    correct: 2,
+    explanation: "We need the past participle 'spoken' after 'Had'."
+  },
+  {
+    id: 26,
+    sentence: "They _______ never _______ a professional football match before yesterday.",
+    options: ["had / seen", "have / seen", "did / see"],
+    correct: 0,
+    explanation: "It refers to a lack of experience before a specific past event."
+  },
+  {
+    id: 27,
+    sentence: "The streets were wet because it _______ a lot during the night.",
+    options: ["had rained", "rained", "was raining"],
+    correct: 0,
+    explanation: "It rained before the observation that streets were wet."
+  },
+  {
+    id: 28,
+    sentence: "When we got home, we saw that someone _______ in through the window.",
+    options: ["broke", "has broken", "had broken"],
+    correct: 2,
+    explanation: "The break-in happened before we got home."
+  },
+  {
+    id: 29,
+    sentence: "He was happy because he _______ his exams.",
+    options: ["had passed", "passed", "has passed"],
+    correct: 0,
+    explanation: "Passing the exams happened before he was happy."
+  },
+  {
+    id: 30,
+    sentence: "Why had she _______ so much work before the meeting started?",
+    options: ["do", "did", "done"],
+    correct: 2,
+    explanation: "'Done' is the past participle used with 'had'."
+  },
+  {
+    id: 31,
+    sentence: "I _______ never _______ that kind of food before I visited Japan.",
+    options: ["had / tried", "have / tried", "did / try"],
+    correct: 0,
+    explanation: "Trying the food was a previous experience to the visit."
+  },
+  {
+    id: 32,
+    sentence: "The house was quiet because everyone _______ to bed.",
+    options: ["went", "had gone", "has gone"],
+    correct: 1,
+    explanation: "Everyone went to bed before the house became quiet."
+  },
+  {
+    id: 33,
+    sentence: "They were late because their car _______ down.",
+    options: ["broke", "had broken", "was breaking"],
+    correct: 1,
+    explanation: "The car breaking down happened before they were late."
+  },
+  {
+    id: 34,
+    sentence: "By the time the police arrived, the thieves _______.",
+    options: ["escaped", "have escaped", "had escaped"],
+    correct: 2,
+    explanation: "The escape happened before the police arrival."
+  },
+  {
+    id: 35,
+    sentence: "I was hungry as I _______ anything since breakfast.",
+    options: ["didn't eat", "hadn't eaten", "haven't eaten"],
+    correct: 1,
+    explanation: "Not eating happened before the feeling of hunger."
   }
 ];
 
@@ -193,7 +298,7 @@ export default function App() {
     // Tomamos exactamente 10 preguntas aleatorias
     const shuffled = [...QUIZ_QUESTIONS]
       .sort(() => Math.random() - 0.5)
-      .slice(0, 10); 
+      .slice(0, 10);
     setQuestions(shuffled);
     setCurrentQuestion(0);
     setSelectedOption(null);
@@ -250,8 +355,8 @@ export default function App() {
   return (
     <div className="min-h-screen relative overflow-hidden comic-grid">
       {/* Dynamic Background */}
-      <motion.div 
-        className="fixed inset-0 halftone pointer-events-none" 
+      <motion.div
+        className="fixed inset-0 halftone pointer-events-none"
         style={{ translateY: bgY }}
       />
 
@@ -262,13 +367,13 @@ export default function App() {
       <Onomatopoeia text="WOW!" bottom="5%" right="10%" delay={0.5} color="text-green-400" />
 
       {/* Progress Bar */}
-      <motion.div 
+      <motion.div
         className="fixed top-0 left-0 right-0 h-4 bg-red-600 z-50 origin-left border-b-2 border-black"
         style={{ scaleX }}
       />
 
       <main className="max-w-4xl mx-auto px-4 py-24 relative z-10">
-        
+
         {/* HERO SECTION */}
         <div className="text-center mb-32 relative">
           <motion.div
@@ -281,7 +386,7 @@ export default function App() {
               ACTION!
             </div>
             <h1 className="text-7xl md:text-9xl font-comic tracking-tighter uppercase leading-none">
-              The <span className="text-red-600">Past</span> <br /> 
+              The <span className="text-red-600">Past</span> <br />
               <span className="text-blue-600">Perfect</span>
             </h1>
             <p className="font-comic text-2xl mt-4 text-slate-600 italic">"The Past of the Past!"</p>
@@ -300,7 +405,7 @@ export default function App() {
             >
               <div className="bg-yellow-100 p-4 border-2 border-black rotate-1">
                 <p className="text-2xl leading-tight">
-                  Imagine the past is a line... <br/>
+                  Imagine the past is a line... <br />
                   <span className="text-red-600 text-3xl font-black">THE PAST PERFECT IS WHO GOT THERE FIRST.</span>
                 </p>
               </div>
@@ -311,7 +416,7 @@ export default function App() {
                 Example: "When I arrived (Past), she HAD ALREADY LEFT (Past Perfect)."
               </div>
             </motion.div>
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
               whileInView={{ scale: 1, opacity: 1 }}
               className="bg-slate-50 p-6 comic-border-style rotate-1 relative"
@@ -327,24 +432,63 @@ export default function App() {
           </div>
         </ComicPanel>
 
+
+        {/* VERB TABLE SECTION */}
+        <ComicPanel className="bg-slate-100">
+          <SectionTitle color="bg-cyan-600">The Verb Vault</SectionTitle>
+          <p className="font-comic text-xl mb-6 italic">"You need the 3rd column for Past Perfect magic!"</p>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse comic-border-style bg-white overflow-hidden">
+              <thead>
+                <tr className="bg-slate-800 text-white font-comic uppercase tracking-widest text-lg">
+                  <th className="p-4 border-2 border-black">Present</th>
+                  <th className="p-4 border-2 border-black">Past Simple</th>
+                  <th className="p-4 border-2 border-black bg-blue-600">Participle (3rd)</th>
+                </tr>
+              </thead>
+              <tbody className="font-bold text-center">
+                {[
+                  { pres: "Eat", past: "Ate", part: "Eaten" },
+                  { pres: "Go", past: "Went", part: "Gone" },
+                  { pres: "See", past: "Saw", part: "Seen" },
+                  { pres: "Do", past: "Did", part: "Done" },
+                  { pres: "Write", past: "Wrote", part: "Written" },
+                  { pres: "Take", past: "Took", part: "Taken" },
+                  { pres: "Forget", past: "Forgot", part: "Forgotten" },
+                  { pres: "Leave", past: "Left", part: "Left" },
+                ].map((verb, i) => (
+                  <tr key={i} className={i % 2 === 0 ? 'bg-slate-50' : 'bg-white'}>
+                    <td className="p-3 border-2 border-black">{verb.pres}</td>
+                    <td className="p-3 border-2 border-black">{verb.past}</td>
+                    <td className="p-3 border-2 border-black bg-blue-50 text-blue-700">{verb.part}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="mt-4 text-xs font-bold text-slate-500 uppercase tracking-widest">
+            * Remember: Regular verbs just end in -ED (Worked, Walked, Answered).
+          </p>
+        </ComicPanel>
+
         {/* HOW TO USE SECTION */}
         <div className="grid md:grid-cols-3 gap-6 mb-24">
           <div className="comic-panel bg-green-50 rotate-1">
-             <div className="bg-green-600 text-white font-comic px-2 py-1 absolute -top-4 left-4 border-2 border-black">✅ AFFIRMATIVE</div>
-             <p className="font-bold text-center mt-4">Subject + <span className="text-red-600">HAD</span> + 3rd column verb</p>
-             <p className="text-sm italic mt-4 bg-white p-2 border border-black">"I had eaten sushi."</p>
+            <div className="bg-green-600 text-white font-comic px-2 py-1 absolute -top-4 left-4 border-2 border-black">✅ AFFIRMATIVE</div>
+            <p className="font-bold text-center mt-4">Subject + <span className="text-red-600">HAD</span> + 3rd column verb</p>
+            <p className="text-sm italic mt-4 bg-white p-2 border border-black">"I had eaten sushi."</p>
           </div>
-          
+
           <div className="comic-panel bg-red-50 -rotate-1">
-             <div className="bg-red-600 text-white font-comic px-2 py-1 absolute -top-4 left-4 border-2 border-black">❌ NEGATIVE</div>
-             <p className="font-bold text-center mt-4">Subject + <span className="text-red-600">HADN'T</span> + 3rd column verb</p>
-             <p className="text-sm italic mt-4 bg-white p-2 border border-black">"She hadn't studied."</p>
+            <div className="bg-red-600 text-white font-comic px-2 py-1 absolute -top-4 left-4 border-2 border-black">❌ NEGATIVE</div>
+            <p className="font-bold text-center mt-4">Subject + <span className="text-red-600">HADN'T</span> + 3rd column verb</p>
+            <p className="text-sm italic mt-4 bg-white p-2 border border-black">"She hadn't studied."</p>
           </div>
 
           <div className="comic-panel bg-blue-50 rotate-1">
-             <div className="bg-blue-600 text-white font-comic px-2 py-1 absolute -top-4 left-4 border-2 border-black">❓ QUESTION</div>
-             <p className="font-bold text-center mt-4"><span className="text-red-600">HAD</span> + Subject + 3rd column verb?</p>
-             <p className="text-sm italic mt-4 bg-white p-2 border border-black">"Had they arrived?"</p>
+            <div className="bg-blue-600 text-white font-comic px-2 py-1 absolute -top-4 left-4 border-2 border-black">❓ QUESTION</div>
+            <p className="font-bold text-center mt-4"><span className="text-red-600">HAD</span> + Subject + 3rd column verb?</p>
+            <p className="text-sm italic mt-4 bg-white p-2 border border-black">"Had they arrived?"</p>
           </div>
         </div>
 
@@ -396,8 +540,8 @@ export default function App() {
                 <p className="text-xs text-slate-500 mt-1 uppercase font-comic">Bad luck! We paid first.</p>
               </div>
               <div className="speech-bubble bg-red-50">
-                 <p className="text-lg">"He was sad because he <span className="text-red-700 font-black">HAD LOST</span> his dog."</p>
-                 <p className="text-xs text-slate-500 mt-1 uppercase font-comic">1. Lost the dog | 2. He was sad</p>
+                <p className="text-lg">"He was sad because he <span className="text-red-700 font-black">HAD LOST</span> his dog."</p>
+                <p className="text-xs text-slate-500 mt-1 uppercase font-comic">1. Lost the dog | 2. He was sad</p>
               </div>
             </div>
           </div>
@@ -408,24 +552,24 @@ export default function App() {
           <SectionTitle color="bg-red-600">Time Travel</SectionTitle>
           <div className="relative py-20 px-4">
             <div className="h-4 bg-black w-full absolute top-1/2 left-0 -translate-y-1/2 rounded-full" />
-            
+
             <div className="grid grid-cols-3 gap-4 relative z-10">
-              <TimelinePoint 
-                title="Action A" 
-                desc="Past Perfect" 
-                color="bg-red-600" 
-                delay={0.2} 
+              <TimelinePoint
+                title="Action A"
+                desc="Past Perfect"
+                color="bg-red-600"
+                delay={0.2}
                 isAction
               />
-              <TimelinePoint 
-                title="Action B" 
-                desc="Past Simple" 
-                color="bg-blue-600" 
-                delay={0.4} 
+              <TimelinePoint
+                title="Action B"
+                desc="Past Simple"
+                color="bg-blue-600"
+                delay={0.4}
                 isAction
               />
               <div className="flex flex-col items-center justify-end h-full">
-                <motion.div 
+                <motion.div
                   className="font-comic text-4xl uppercase text-slate-400"
                   animate={{ opacity: [0.3, 0.6, 0.3] }}
                   transition={{ repeat: Infinity, duration: 2 }}
@@ -448,7 +592,7 @@ export default function App() {
 
           <AnimatePresence mode="wait">
             {!isFinished ? (
-              <motion.div 
+              <motion.div
                 key={currentQuestion}
                 initial={{ scale: 0.9, opacity: 0, rotate: -5 }}
                 animate={{ scale: 1, opacity: 1, rotate: 0 }}
@@ -474,7 +618,7 @@ export default function App() {
                 </div>
 
                 {showFeedback && (
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     className={`p-8 comic-border-style border-white flex flex-col md:flex-row gap-6 ${isCorrect ? 'bg-green-600' : 'bg-red-600'} text-white`}
@@ -485,11 +629,11 @@ export default function App() {
                     <div className="flex-1">
                       <h4 className="font-comic text-3xl uppercase mb-2">{isCorrect ? 'Incredible!' : 'Watch out!'}</h4>
                       <p className="text-white text-lg font-medium opacity-90 mb-4">{questions[currentQuestion].explanation}</p>
-                      <button 
+                      <button
                         onClick={nextQuestion}
                         className="bg-black text-white px-8 py-3 font-comic text-xl uppercase tracking-widest hover:bg-yellow-400 hover:text-black transition-colors comic-border-style border-white"
                       >
-                        {currentQuestion === questions.length - 1 ? 'Finish Mission' : 'Next Panel' } <ArrowRight className="inline ml-2" />
+                        {currentQuestion === questions.length - 1 ? 'Finish Mission' : 'Next Panel'} <ArrowRight className="inline ml-2" />
                       </button>
                     </div>
                   </motion.div>
@@ -503,7 +647,7 @@ export default function App() {
               >
                 <div className="text-8xl mb-4">🏆</div>
                 <h3 className="text-5xl font-comic text-white uppercase tracking-tighter">Mission Complete</h3>
-                
+
                 <div className="space-y-2">
                   <p className="text-2xl text-slate-400 font-comic uppercase">Your Rank:</p>
                   <p className={`text-7xl font-comic uppercase tracking-widest ${getRank().color}`}>
@@ -522,7 +666,7 @@ export default function App() {
                   </div>
                 </div>
 
-                <button 
+                <button
                   onClick={shuffleQuestions}
                   className="bg-yellow-400 text-black px-12 py-4 font-comic text-2xl uppercase tracking-widest hover:bg-white transition-all comic-border-style"
                 >
@@ -535,7 +679,7 @@ export default function App() {
 
         {/* FOOTER */}
         <footer className="text-center mt-32">
-          <motion.div 
+          <motion.div
             whileHover={{ scale: 1.1, rotate: 2 }}
             className="bg-black text-white px-8 py-4 inline-block -rotate-1 cursor-pointer"
           >
@@ -553,17 +697,17 @@ export default function App() {
 
 function Onomatopoeia({ text, top, left, right, bottom, delay, color }: any) {
   return (
-    <motion.span 
+    <motion.span
       className={`onomatopoeia ${color}`}
       style={{ top, left, right, bottom }}
-      animate={{ 
+      animate={{
         scale: [1, 1.2, 1],
         rotate: [-5, 5, -5],
       }}
-      transition={{ 
-        repeat: Infinity, 
+      transition={{
+        repeat: Infinity,
         duration: 3,
-        delay 
+        delay
       }}
     >
       {text}
@@ -573,7 +717,7 @@ function Onomatopoeia({ text, top, left, right, bottom, delay, color }: any) {
 
 function TimelinePoint({ title, desc, color, delay, isAction }: any) {
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       transition={{ delay }}
@@ -612,9 +756,9 @@ function QuizButton({ text, index, selected, isCorrect, showFeedback, onClick }:
         <span>{text}</span>
       </div>
       {showFeedback && isCorrect && selected && (
-        <motion.div 
-          initial={{ scale: 0 }} 
-          animate={{ scale: 1.5 }} 
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1.5 }}
           className="absolute right-6 top-1/2 -translate-y-1/2 text-white"
         >
           <Zap fill="white" />
