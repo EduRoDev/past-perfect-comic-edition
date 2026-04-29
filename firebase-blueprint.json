@@ -1,0 +1,35 @@
+{
+  "entities": {
+    "QuizResult": {
+      "title": "Quiz Result",
+      "description": "Student's quiz results and answers",
+      "type": "object",
+      "properties": {
+        "studentName": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "score": { "type": "number" },
+        "totalQuestions": { "type": "number" },
+        "answers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "questionId": { "type": "number" },
+              "sentence": { "type": "string" },
+              "selectedOption": { "type": "string" },
+              "correctOption": { "type": "string" },
+              "isCorrect": { "type": "boolean" }
+            }
+          }
+        }
+      },
+      "required": ["studentName", "timestamp", "score", "totalQuestions", "answers"]
+    }
+  },
+  "firestore": {
+    "/results/{resultId}": {
+      "schema": "QuizResult",
+      "description": "Stored quiz results for teacher review"
+    }
+  }
+}

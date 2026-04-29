@@ -1,12 +1,23 @@
-import React, { useState } from 'react';
-import { motion, useScroll, useSpring, useTransform, AnimatePresence } from 'motion/react';
-import {
-  Zap,
-  CheckCircle2,
-  XCircle,
-  ArrowRight,
 
+import React, { useState, useEffect } from 'react';
+import { motion, useScroll, useSpring, useTransform, AnimatePresence } from 'motion/react';
+import { 
+  Zap, 
+  CheckCircle2, 
+  XCircle, 
+  ArrowRight,
+  Calendar,
+  AlertCircle,
+  User,
+  History,
+  Loader2
 } from 'lucide-react';
+import { initializeApp } from 'firebase/app';
+import { getFirestore, collection, addDoc, serverTimestamp, getDocs, query, orderBy, Timestamp, doc, getDocFromServer } from 'firebase/firestore';
+import firebaseConfig from '../firebase-applet-config.json';
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 
 // --- TYPES ---
 interface QuizQuestion {
@@ -266,6 +277,8 @@ const QUIZ_QUESTIONS: QuizQuestion[] = [
   }
 ];
 
+// --- COMPONENTS ---
+
 const SectionTitle = ({ children, color = "bg-blue-500" }: { children: React.ReactNode, color?: string }) => (
   <div className={`inline-block px-6 py-2 ${color} comic-border-style -rotate-2 mb-8`}>
     <h2 className="text-4xl font-comic text-white tracking-widest uppercase">{children}</h2>
@@ -292,23 +305,105 @@ export default function App() {
   const [showFeedback, setShowFeedback] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
   const [isFinished, setIsFinished] = useState(false);
+  
+  const [studentName, setStudentName] = useState('');
+  const [isStarted, setIsStarted] = useState(false);
+  const [userAnswers, setUserAnswers] = useState<any[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showResultsList, setShowResultsList] = useState(false);
+  const [allResults, setAllResults] = useState<any[]>([]);
+  const [isLoadingResults, setIsLoadingResults] = useState(false);
 
   // Shuffle questions on mount
   const shuffleQuestions = () => {
-    // Tomamos exactamente 10 preguntas aleatorias
     const shuffled = [...QUIZ_QUESTIONS]
       .sort(() => Math.random() - 0.5)
-      .slice(0, 10);
+      .slice(0, 10); 
     setQuestions(shuffled);
     setCurrentQuestion(0);
     setSelectedOption(null);
     setShowFeedback(false);
     setCorrectCount(0);
     setIsFinished(false);
+    setUserAnswers([]);
+    setIsSaving(false);
   };
 
-  React.useEffect(() => {
-    shuffleQuestions();
+  const startQuiz = () => {
+    if (studentName.trim().length > 0) {
+      setIsStarted(true);
+      shuffleQuestions();
+    }
+  };
+
+  const handleFirestoreError = (error: unknown, operationType: string, path: string | null) => {
+    const errInfo = {
+      error: error instanceof Error ? error.message : String(error),
+      authInfo: {
+        userId: null, // No auth implementation in this simple version
+        email: null,
+      },
+      operationType,
+      path
+    };
+    console.error('Firestore Error: ', JSON.stringify(errInfo));
+    throw new Error(JSON.stringify(errInfo));
+  };
+
+  const saveResults = async (finalScore: number, answers: any[]) => {
+    setIsSaving(true);
+    const path = 'results';
+    try {
+      await addDoc(collection(db, path), {
+        studentName,
+        score: finalScore,
+        totalQuestions: questions.length,
+        timestamp: serverTimestamp(),
+        answers: answers.map(a => ({
+          questionId: a.question.id,
+          sentence: a.question.sentence,
+          selectedOption: a.question.options[a.selected],
+          correctOption: a.question.options[a.question.correct],
+          isCorrect: a.selected === a.question.correct
+        }))
+      });
+    } catch (error) {
+      handleFirestoreError(error, 'write', path);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const fetchAllResults = async () => {
+    setIsLoadingResults(true);
+    setShowResultsList(true);
+    const path = 'results';
+    try {
+      const q = query(collection(db, path), orderBy('timestamp', 'desc'));
+      const querySnapshot = await getDocs(q);
+      const resultsData = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setAllResults(resultsData);
+    } catch (error) {
+      handleFirestoreError(error, 'list', path);
+    } finally {
+      setIsLoadingResults(false);
+    }
+  };
+
+  useEffect(() => {
+    const testConnection = async () => {
+      try {
+        await getDocFromServer(doc(db, 'test', 'connection'));
+      } catch (error) {
+        if (error instanceof Error && error.message.includes('the client is offline')) {
+          console.error("Please check your Firebase configuration.");
+        }
+      }
+    };
+    testConnection();
   }, []);
 
   const { scrollYProgress } = useScroll();
@@ -324,26 +419,29 @@ export default function App() {
     if (showFeedback || !questions.length || isFinished) return;
     setSelectedOption(index);
     setShowFeedback(true);
-    if (index === questions[currentQuestion].correct) {
+    
+    const currentQ = questions[currentQuestion];
+    const isAnswerCorrect = index === currentQ.correct;
+    
+    setUserAnswers(prev => [...prev, { question: currentQ, selected: index }]);
+    
+    if (isAnswerCorrect) {
       setCorrectCount(prev => prev + 1);
     }
   };
 
   const nextQuestion = () => {
-    // Si todavía no estamos en la última pregunta (índice 9 para 10 preguntas)
     if (currentQuestion < 9) {
       setSelectedOption(null);
       setShowFeedback(false);
       setCurrentQuestion(prev => prev + 1);
     } else {
-      // Al terminar la pregunta 10, mostramos resultados
       setIsFinished(true);
+      saveResults(correctCount, userAnswers);
     }
   };
 
-  const isCorrect = questions.length > 0 && selectedOption === questions[currentQuestion].correct;
-
-  if (!questions.length) return <div className="min-h-screen bg-yellow-400 flex items-center justify-center font-comic text-4xl p-10 text-center border-8 border-black shadow-[20px_20px_0px_#000]">LOADING GRAMMAR MISSION...</div>;
+  const isAnswerCorrect = questions.length > 0 && currentQuestion < questions.length && selectedOption === questions[currentQuestion].correct;
 
   const getRank = () => {
     if (correctCount === 10) return { title: "GRAMMAR LEGEND", color: "text-yellow-400" };
@@ -355,8 +453,8 @@ export default function App() {
   return (
     <div className="min-h-screen relative overflow-hidden comic-grid">
       {/* Dynamic Background */}
-      <motion.div
-        className="fixed inset-0 halftone pointer-events-none"
+      <motion.div 
+        className="fixed inset-0 halftone pointer-events-none" 
         style={{ translateY: bgY }}
       />
 
@@ -367,13 +465,13 @@ export default function App() {
       <Onomatopoeia text="WOW!" bottom="5%" right="10%" delay={0.5} color="text-green-400" />
 
       {/* Progress Bar */}
-      <motion.div
+      <motion.div 
         className="fixed top-0 left-0 right-0 h-4 bg-red-600 z-50 origin-left border-b-2 border-black"
         style={{ scaleX }}
       />
 
       <main className="max-w-4xl mx-auto px-4 py-24 relative z-10">
-
+        
         {/* HERO SECTION */}
         <div className="text-center mb-32 relative">
           <motion.div
@@ -386,7 +484,7 @@ export default function App() {
               ACTION!
             </div>
             <h1 className="text-7xl md:text-9xl font-comic tracking-tighter uppercase leading-none">
-              The <span className="text-red-600">Past</span> <br />
+              The <span className="text-red-600">Past</span> <br /> 
               <span className="text-blue-600">Perfect</span>
             </h1>
             <p className="font-comic text-2xl mt-4 text-slate-600 italic">"The Past of the Past!"</p>
@@ -405,7 +503,7 @@ export default function App() {
             >
               <div className="bg-yellow-100 p-4 border-2 border-black rotate-1">
                 <p className="text-2xl leading-tight">
-                  Imagine the past is a line... <br />
+                  Imagine the past is a line... <br/>
                   <span className="text-red-600 text-3xl font-black">THE PAST PERFECT IS WHO GOT THERE FIRST.</span>
                 </p>
               </div>
@@ -416,7 +514,7 @@ export default function App() {
                 Example: "When I arrived (Past), she HAD ALREADY LEFT (Past Perfect)."
               </div>
             </motion.div>
-            <motion.div
+            <motion.div 
               initial={{ scale: 0.8, opacity: 0 }}
               whileInView={{ scale: 1, opacity: 1 }}
               className="bg-slate-50 p-6 comic-border-style rotate-1 relative"
@@ -431,7 +529,6 @@ export default function App() {
             </motion.div>
           </div>
         </ComicPanel>
-
 
         {/* VERB TABLE SECTION */}
         <ComicPanel className="bg-slate-100">
@@ -474,21 +571,21 @@ export default function App() {
         {/* HOW TO USE SECTION */}
         <div className="grid md:grid-cols-3 gap-6 mb-24">
           <div className="comic-panel bg-green-50 rotate-1">
-            <div className="bg-green-600 text-white font-comic px-2 py-1 absolute -top-4 left-4 border-2 border-black">✅ AFFIRMATIVE</div>
-            <p className="font-bold text-center mt-4">Subject + <span className="text-red-600">HAD</span> + 3rd column verb</p>
-            <p className="text-sm italic mt-4 bg-white p-2 border border-black">"I had eaten sushi."</p>
+             <div className="bg-green-600 text-white font-comic px-2 py-1 absolute -top-4 left-4 border-2 border-black">✅ AFFIRMATIVE</div>
+             <p className="font-bold text-center mt-4">Subject + <span className="text-red-600">HAD</span> + 3rd column verb</p>
+             <p className="text-sm italic mt-4 bg-white p-2 border border-black">"I had eaten sushi."</p>
           </div>
-
+          
           <div className="comic-panel bg-red-50 -rotate-1">
-            <div className="bg-red-600 text-white font-comic px-2 py-1 absolute -top-4 left-4 border-2 border-black">❌ NEGATIVE</div>
-            <p className="font-bold text-center mt-4">Subject + <span className="text-red-600">HADN'T</span> + 3rd column verb</p>
-            <p className="text-sm italic mt-4 bg-white p-2 border border-black">"She hadn't studied."</p>
+             <div className="bg-red-600 text-white font-comic px-2 py-1 absolute -top-4 left-4 border-2 border-black">❌ NEGATIVE</div>
+             <p className="font-bold text-center mt-4">Subject + <span className="text-red-600">HADN'T</span> + 3rd column verb</p>
+             <p className="text-sm italic mt-4 bg-white p-2 border border-black">"She hadn't studied."</p>
           </div>
 
           <div className="comic-panel bg-blue-50 rotate-1">
-            <div className="bg-blue-600 text-white font-comic px-2 py-1 absolute -top-4 left-4 border-2 border-black">❓ QUESTION</div>
-            <p className="font-bold text-center mt-4"><span className="text-red-600">HAD</span> + Subject + 3rd column verb?</p>
-            <p className="text-sm italic mt-4 bg-white p-2 border border-black">"Had they arrived?"</p>
+             <div className="bg-blue-600 text-white font-comic px-2 py-1 absolute -top-4 left-4 border-2 border-black">❓ QUESTION</div>
+             <p className="font-bold text-center mt-4"><span className="text-red-600">HAD</span> + Subject + 3rd column verb?</p>
+             <p className="text-sm italic mt-4 bg-white p-2 border border-black">"Had they arrived?"</p>
           </div>
         </div>
 
@@ -540,8 +637,8 @@ export default function App() {
                 <p className="text-xs text-slate-500 mt-1 uppercase font-comic">Bad luck! We paid first.</p>
               </div>
               <div className="speech-bubble bg-red-50">
-                <p className="text-lg">"He was sad because he <span className="text-red-700 font-black">HAD LOST</span> his dog."</p>
-                <p className="text-xs text-slate-500 mt-1 uppercase font-comic">1. Lost the dog | 2. He was sad</p>
+                 <p className="text-lg">"He was sad because he <span className="text-red-700 font-black">HAD LOST</span> his dog."</p>
+                 <p className="text-xs text-slate-500 mt-1 uppercase font-comic">1. Lost the dog | 2. He was sad</p>
               </div>
             </div>
           </div>
@@ -552,24 +649,24 @@ export default function App() {
           <SectionTitle color="bg-red-600">Time Travel</SectionTitle>
           <div className="relative py-20 px-4">
             <div className="h-4 bg-black w-full absolute top-1/2 left-0 -translate-y-1/2 rounded-full" />
-
+            
             <div className="grid grid-cols-3 gap-4 relative z-10">
-              <TimelinePoint
-                title="Action A"
-                desc="Past Perfect"
-                color="bg-red-600"
-                delay={0.2}
+              <TimelinePoint 
+                title="Action A" 
+                desc="Past Perfect" 
+                color="bg-red-600" 
+                delay={0.2} 
                 isAction
               />
-              <TimelinePoint
-                title="Action B"
-                desc="Past Simple"
-                color="bg-blue-600"
-                delay={0.4}
+              <TimelinePoint 
+                title="Action B" 
+                desc="Past Simple" 
+                color="bg-blue-600" 
+                delay={0.4} 
                 isAction
               />
               <div className="flex flex-col items-center justify-end h-full">
-                <motion.div
+                <motion.div 
                   className="font-comic text-4xl uppercase text-slate-400"
                   animate={{ opacity: [0.3, 0.6, 0.3] }}
                   transition={{ repeat: Infinity, duration: 2 }}
@@ -582,17 +679,51 @@ export default function App() {
         </ComicPanel>
 
         {/* QUIZ SECTION */}
-        <ComicPanel className="bg-slate-900 border-yellow-400 min-h-[600px] flex flex-col">
-          <div className="flex justify-between items-start mb-8">
+        <ComicPanel className="bg-slate-900 border-yellow-400 min-h-[600px] flex flex-col relative overflow-visible">
+          <div className="flex justify-between items-start mb-8 flex-wrap gap-4">
             <SectionTitle color="bg-yellow-400">Challenge Mode!</SectionTitle>
-            <div className="bg-white text-black font-comic px-4 py-2 comic-border-style">
-              {isFinished ? 'MISSION COMPLETE' : `STEP: ${currentQuestion + 1}/${questions.length}`}
+            <div className="bg-white text-black font-comic px-4 py-2 comic-border-style flex items-center gap-2">
+              <User className="w-5 h-5" />
+              {studentName || 'RECRUIT'}
             </div>
+            {isStarted && (
+              <div className="bg-white text-black font-comic px-4 py-2 comic-border-style">
+                {isFinished ? 'MISSION COMPLETE' : `STEP: ${currentQuestion + 1}/${questions.length}`}
+              </div>
+            )}
           </div>
 
           <AnimatePresence mode="wait">
-            {!isFinished ? (
+            {!isStarted ? (
               <motion.div
+                key="name-input"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.1 }}
+                className="flex-1 flex flex-col items-center justify-center text-center space-y-8"
+              >
+                <div className="bg-slate-800 p-8 comic-border-style border-yellow-400 max-w-md w-full">
+                  <h3 className="text-3xl font-comic text-white mb-6 uppercase">Enter your Hero Name</h3>
+                  <div className="relative mb-6">
+                    <input 
+                      type="text" 
+                      value={studentName}
+                      onChange={(e) => setStudentName(e.target.value)}
+                      placeholder="GOKU, SPIDER-MAN, ETC..."
+                      className="w-full bg-white border-4 border-black p-4 font-comic text-2xl focus:outline-none focus:ring-4 ring-yellow-400"
+                    />
+                  </div>
+                  <button 
+                    onClick={startQuiz}
+                    disabled={!studentName.trim()}
+                    className="w-full bg-yellow-400 text-black px-8 py-4 font-comic text-2xl uppercase tracking-widest hover:bg-white disabled:opacity-50 disabled:hover:bg-yellow-400 transition-all comic-border-style"
+                  >
+                    Start Mission
+                  </button>
+                </div>
+              </motion.div>
+            ) : !isFinished ? (
+              <motion.div 
                 key={currentQuestion}
                 initial={{ scale: 0.9, opacity: 0, rotate: -5 }}
                 animate={{ scale: 1, opacity: 1, rotate: 0 }}
@@ -603,7 +734,7 @@ export default function App() {
                   "{questions[currentQuestion].sentence}"
                 </div>
 
-                <div className="grid gap-6">
+                <div className="grid gap-6 text-white">
                   {questions[currentQuestion].options.map((option, idx) => (
                     <QuizButton
                       key={idx}
@@ -618,22 +749,22 @@ export default function App() {
                 </div>
 
                 {showFeedback && (
-                  <motion.div
+                  <motion.div 
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className={`p-8 comic-border-style border-white flex flex-col md:flex-row gap-6 ${isCorrect ? 'bg-green-600' : 'bg-red-600'} text-white`}
+                    className={`p-8 comic-border-style border-white flex flex-col md:flex-row gap-6 ${isAnswerCorrect ? 'bg-green-600' : 'bg-red-600'} text-white`}
                   >
                     <div className="shrink-0 flex items-center justify-center">
-                      {isCorrect ? <CheckCircle2 className="w-16 h-16" /> : <XCircle className="w-16 h-16" />}
+                      {isAnswerCorrect ? <CheckCircle2 className="w-16 h-16" /> : <XCircle className="w-16 h-16" />}
                     </div>
                     <div className="flex-1">
-                      <h4 className="font-comic text-3xl uppercase mb-2">{isCorrect ? 'Incredible!' : 'Watch out!'}</h4>
+                      <h4 className="font-comic text-3xl uppercase mb-2">{isAnswerCorrect ? 'Incredible!' : 'Watch out!'}</h4>
                       <p className="text-white text-lg font-medium opacity-90 mb-4">{questions[currentQuestion].explanation}</p>
-                      <button
+                      <button 
                         onClick={nextQuestion}
-                        className="bg-black text-white px-8 py-3 font-comic text-xl uppercase tracking-widest hover:bg-yellow-400 hover:text-black transition-colors comic-border-style border-white"
+                        className="bg-black text-white px-8 py-3 font-comic text-xl uppercase tracking-widest hover:bg-yellow-400 hover:text-black transition-colors comic-border-style border-white flex items-center gap-2"
                       >
-                        {currentQuestion === questions.length - 1 ? 'Finish Mission' : 'Next Panel'} <ArrowRight className="inline ml-2" />
+                        {currentQuestion === questions.length - 1 ? 'Finish Mission' : 'Next Panel' } <ArrowRight className="inline ml-2" />
                       </button>
                     </div>
                   </motion.div>
@@ -647,6 +778,13 @@ export default function App() {
               >
                 <div className="text-8xl mb-4">🏆</div>
                 <h3 className="text-5xl font-comic text-white uppercase tracking-tighter">Mission Complete</h3>
+                
+                {isSaving && (
+                  <div className="flex items-center gap-3 bg-blue-600 text-white px-6 py-3 comic-border-style animate-pulse">
+                    <Loader2 className="animate-spin" />
+                    <span>REPORTING TO HEADQUARTERS...</span>
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <p className="text-2xl text-slate-400 font-comic uppercase">Your Rank:</p>
@@ -666,20 +804,109 @@ export default function App() {
                   </div>
                 </div>
 
-                <button
-                  onClick={shuffleQuestions}
-                  className="bg-yellow-400 text-black px-12 py-4 font-comic text-2xl uppercase tracking-widest hover:bg-white transition-all comic-border-style"
-                >
-                  Restart Mission
-                </button>
+                <div className="flex gap-4 flex-wrap justify-center">
+                  <button 
+                    onClick={shuffleQuestions}
+                    className="bg-yellow-400 text-black px-12 py-4 font-comic text-2xl uppercase tracking-widest hover:bg-white transition-all comic-border-style"
+                  >
+                    Restart Mission
+                  </button>
+                  <button 
+                    onClick={() => { setIsStarted(false); setStudentName(''); }}
+                    className="bg-white text-black px-12 py-4 font-comic text-2xl uppercase tracking-widest hover:bg-yellow-400 transition-all comic-border-style"
+                  >
+                    Change Hero
+                  </button>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
         </ComicPanel>
 
+        {/* RESULTS VIEWER (TEACHER DASHBOARD) */}
+        {!showResultsList ? (
+          <div className="mt-12 text-center">
+            <button 
+              onClick={fetchAllResults}
+              className="group relative inline-flex items-center gap-2 bg-slate-800 text-white px-6 py-3 font-comic uppercase tracking-widest hover:bg-black transition-all comic-border-style overflow-hidden"
+            >
+              <div className="absolute inset-0 bg-yellow-400 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+              <History className="w-5 h-5 relative z-10" />
+              <span className="relative z-10">Professor Dashboard</span>
+            </button>
+          </div>
+        ) : (
+          <ComicPanel className="bg-slate-50 mt-12">
+            <div className="flex justify-between items-center mb-8">
+              <SectionTitle color="bg-purple-600">Missions Log</SectionTitle>
+              <button 
+                onClick={() => setShowResultsList(false)}
+                className="bg-black text-white p-2 comic-border-style hover:bg-red-600 transition-colors"
+                title="Close"
+              >
+                <XCircle />
+              </button>
+            </div>
+
+            {isLoadingResults ? (
+              <div className="flex flex-col items-center py-20 gap-4">
+                <Loader2 className="w-16 h-16 animate-spin text-purple-600" />
+                <p className="font-comic text-2xl animate-pulse">CLASSIFIED INTEL LOADING...</p>
+              </div>
+            ) : allResults.length === 0 ? (
+              <div className="text-center py-20">
+                <AlertCircle className="w-16 h-16 mx-auto mb-4 text-slate-400" />
+                <p className="font-comic text-2xl text-slate-500">NO MISSIONS RECORDED YET.</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {allResults.map((res: any) => (
+                  <div key={res.id} className="bg-white p-6 comic-border-style border-purple-600 relative overflow-hidden group">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h4 className="text-2xl font-comic uppercase flex items-center gap-2">
+                          <User className="text-purple-600" /> {res.studentName}
+                        </h4>
+                        <p className="text-slate-400 text-xs flex items-center gap-1 font-mono">
+                          <Calendar className="w-3 h-3" /> 
+                          {res.timestamp instanceof Timestamp ? res.timestamp.toDate().toLocaleString() : 'N/A'}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-3xl font-black text-purple-700">{res.score}/{res.totalQuestions}</div>
+                        <p className="text-[10px] font-bold uppercase text-slate-400 tracking-tighter">SUCCESS RATE</p>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                      {res.answers?.map((ans: any, i: number) => (
+                        <div key={i} className={`p-2 text-xs border ${ans.isCorrect ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'} rounded`}>
+                          <div className="font-bold truncate" title={ans.sentence}>Q{i+1}: {ans.sentence}</div>
+                          <div className="grid grid-cols-2 gap-1 mt-1 font-mono text-[9px]">
+                            <div>
+                              <span className="opacity-50">Selected:</span>
+                              <div className={ans.isCorrect ? 'text-green-700' : 'text-red-700'}>{ans.selectedOption}</div>
+                            </div>
+                            {!ans.isCorrect && (
+                              <div>
+                                <span className="opacity-50">Correct:</span>
+                                <div className="text-green-700 font-bold">{ans.correctOption}</div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </ComicPanel>
+        )}
+
         {/* FOOTER */}
         <footer className="text-center mt-32">
-          <motion.div
+          <motion.div 
             whileHover={{ scale: 1.1, rotate: 2 }}
             className="bg-black text-white px-8 py-4 inline-block -rotate-1 cursor-pointer"
           >
@@ -697,17 +924,17 @@ export default function App() {
 
 function Onomatopoeia({ text, top, left, right, bottom, delay, color }: any) {
   return (
-    <motion.span
+    <motion.span 
       className={`onomatopoeia ${color}`}
       style={{ top, left, right, bottom }}
-      animate={{
+      animate={{ 
         scale: [1, 1.2, 1],
         rotate: [-5, 5, -5],
       }}
-      transition={{
-        repeat: Infinity,
+      transition={{ 
+        repeat: Infinity, 
         duration: 3,
-        delay
+        delay 
       }}
     >
       {text}
@@ -717,7 +944,7 @@ function Onomatopoeia({ text, top, left, right, bottom, delay, color }: any) {
 
 function TimelinePoint({ title, desc, color, delay, isAction }: any) {
   return (
-    <motion.div
+    <motion.div 
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       transition={{ delay }}
@@ -756,9 +983,9 @@ function QuizButton({ text, index, selected, isCorrect, showFeedback, onClick }:
         <span>{text}</span>
       </div>
       {showFeedback && isCorrect && selected && (
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1.5 }}
+        <motion.div 
+          initial={{ scale: 0 }} 
+          animate={{ scale: 1.5 }} 
           className="absolute right-6 top-1/2 -translate-y-1/2 text-white"
         >
           <Zap fill="white" />
@@ -767,4 +994,3 @@ function QuizButton({ text, index, selected, isCorrect, showFeedback, onClick }:
     </motion.button>
   );
 }
-
