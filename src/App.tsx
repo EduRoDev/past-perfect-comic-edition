@@ -506,11 +506,11 @@ export default function App() {
                   Imagine the past is a line... <br/>
                   <span className="text-red-600 text-3xl font-black">THE PAST PERFECT IS WHO GOT THERE FIRST.</span>
                 </p>
-              </div>
-              <p className="text-xl text-slate-700">
-                It's the <span className="underline decoration-blue-500 decoration-4">Past of the Past</span>. We use it to say that something had already finished before something else happened.
+              </div>  
+              <p className="text-xl text-slate-700 font-sans">
+                We use it to say that something had already finished before something else happened.
               </p>
-              <div className="bg-blue-600 text-white p-2 text-center -rotate-1">
+              <div className="bg-blue-600 text-white p-2 text-center -rotate-1 font-sans">
                 Example: "When I arrived (Past), she HAD ALREADY LEFT (Past Perfect)."
               </div>
             </motion.div>
@@ -532,8 +532,8 @@ export default function App() {
 
         {/* VERB TABLE SECTION */}
         <ComicPanel className="bg-slate-100">
-          <SectionTitle color="bg-cyan-600">The Verb Vault</SectionTitle>
-          <p className="font-comic text-xl mb-6 italic">"You need the 3rd column for Past Perfect magic!"</p>
+          <SectionTitle color="bg-cyan-600">Verbs</SectionTitle>
+          <p className="font-comic text-xl mb-6s">"You need the 3rd column for Past Perfect magic!"</p>
           <div className="overflow-x-auto">
             <table className="w-full border-collapse comic-border-style bg-white overflow-hidden">
               <thead>
@@ -647,6 +647,10 @@ export default function App() {
         {/* TIMELINE SECTION */}
         <ComicPanel className="bg-blue-50">
           <SectionTitle color="bg-red-600">Time Travel</SectionTitle>
+          <div className="bg-white p-4 border-2 border-black comic-border-style rotate-1 max-w-2xl mx-auto mb-8 font-sans text-lg text-center">
+            Both events are in the past, but <strong className="text-red-600">Action A</strong> happened <em className="font-bold underline">before</em> <strong className="text-blue-600">Action B</strong>.<br/> 
+            We use the <strong>Past Perfect</strong> to clearly show which action was the <em>very first one</em>!
+          </div>
           <div className="relative py-20 px-4">
             <div className="h-4 bg-black w-full absolute top-1/2 left-0 -translate-y-1/2 rounded-full" />
             
